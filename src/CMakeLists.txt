@@ -23,10 +23,6 @@ if( DEM_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 	endif()
 endif()
 
-if( APPLE )
-		option( OSX_COCOA_BACKEND "Use native Cocoa backend instead of SDL" ON )
-endif()
-
 option( ZDOOM_ENABLE_SWR "Enable software renderer" ON )
 if( NOT ZDOOM_ENABLE_SWR )
 	add_definitions( -DNO_SWRENDERER )
@@ -421,12 +417,17 @@ set( PLAT_OSX_SOURCES
 	posix/osx/zdoom.icns )
 set( PLAT_COCOA_SOURCES
 	common/platform/posix/cocoa/i_input.mm
-	common/platform/posix/cocoa/i_joystick.cpp
 	common/platform/posix/cocoa/i_main.mm
 	common/platform/posix/cocoa/i_system.mm
 	common/platform/posix/cocoa/i_video.mm
 	common/platform/posix/cocoa/st_console.mm
 	common/platform/posix/cocoa/st_start.mm )
+
+if( APPLE AND OSX_GAMECONTROLLER_BACKEND )
+	list( APPEND PLAT_COCOA_SOURCES common/platform/posix/cocoa/i_gamecontroller.mm )
+else()
+	list( APPEND PLAT_COCOA_SOURCES common/platform/posix/cocoa/i_joystick.cpp )
+endif()
 
 if( WIN32 )
 	set( SYSTEM_SOURCES_DIR common/platform/win32 )
@@ -1533,7 +1534,12 @@ if( DEM_CMAKE_COMPILER_IS_GNUCXX_COMPATIBLE )
 endif()
 
 if( APPLE )
-	set( LINK_FRAMEWORKS "-framework Cocoa -framework IOKit -framework OpenGL")
+	set( LINK_FRAMEWORKS "-framework Cocoa -framework OpenGL")
+	if( OSX_GAMECONTROLLER_BACKEND )
+		set( LINK_FRAMEWORKS "${LINK_FRAMEWORKS} -framework GameController" )
+	else()
+		set( LINK_FRAMEWORKS "${LINK_FRAMEWORKS} -framework IOKit" )
+	endif()
 
 	if( HAVE_VULKAN )
 		set( LINK_FRAMEWORKS "${LINK_FRAMEWORKS} -framework QuartzCore" )

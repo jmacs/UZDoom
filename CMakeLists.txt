@@ -10,6 +10,14 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if( APPLE )
+	option( OSX_COCOA_BACKEND "Use native Cocoa backend instead of SDL" ON )
+	option( OSX_GAMECONTROLLER_BACKEND "Use GameController.framework for Cocoa controller input" OFF )
+	if( OSX_GAMECONTROLLER_BACKEND AND NOT OSX_COCOA_BACKEND )
+		message(FATAL_ERROR "OSX_GAMECONTROLLER_BACKEND requires OSX_COCOA_BACKEND=ON")
+	endif()
+endif()
+
 set(ABSL_BUILD_TESTING OFF) # don't build/run abseil tests
 
 # make all targets use LTO - want to do this early in the cmake to ensure it applies to any targets
@@ -365,7 +373,11 @@ else()
 	if( APPLE )
 		list(PREPEND CMAKE_PREFIX_PATH "/opt/local")    # port
 		list(PREPEND CMAKE_PREFIX_PATH "/opt/homebrew") # brew
-		set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13")
+		if( OSX_GAMECONTROLLER_BACKEND )
+			set(CMAKE_OSX_DEPLOYMENT_TARGET "26.0")
+		else()
+			set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13")
+		endif()
 		if( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" )
 			# If we're compiling with a custom GCC on the Mac (which we know since g++-4.2 doesn't support C++11) statically link libgcc.
 			set( ALL_C_FLAGS "-static-libgcc" )
